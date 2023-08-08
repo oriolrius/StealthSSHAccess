@@ -5,43 +5,20 @@ import logging
 import psutil
 import asyncio
 
-import selectors
-
-# Set the log level for the selectors module to DEBUG
-logging.getLogger(selectors.__name__).setLevel(logging.DEBUG)
-# Add a handler to the selectors logger to configure output
-logging.getLogger(selectors.__name__).addHandler(logging.StreamHandler())
-# Create a logger for your module
-logger = logging.getLogger(__name__)
-# Set the log level for your module to DEBUG
-logger.setLevel(logging.DEBUG)
-# Add a handler to your module's logger to configure output
-logger.addHandler(logging.StreamHandler())
-# # Now you should see log messages from the selectors module and your module
-
-
-# # Debug
+# Debug
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-# # FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-# # logging.root.setLevel(logging.DEBUG)
-# # logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
-# # logger = logging.getLogger('openssh')
-
-# # Set the log level for the root logger
-# logging.root.setLevel(logging.DEBUG)
-# # Add a handler to the root logger to configure output
-# logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s - %(message)s")
-# # Create a logger for your module
-# logger = logging.getLogger(__name__)
-
+FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.root.setLevel(logging.DEBUG)
+logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
+logger = logging.getLogger(__name__)
 logger.debug(f'LOGLEVEL = {LOGLEVEL}')
 
 # Configuration
 iface = os.getenv('IFACE') or "eth0"
 iface_ip = os.getenv("IFACE_IP") or "172.19.0.2"
-port_to_monitor = int(os.getenv('PORT_TO_MONITOR') or "55888")
+port_to_monitor = int(os.getenv('PORT_TO_MONITOR')) or 55888
 filter_expr = f"tcp port {port_to_monitor}"
-port_to_open = int(os.getenv('PORT_TO_OPEN') or port_to_open)
+port_to_open = int(os.getenv('PORT_TO_OPEN')) or 55222
 TIMEOUT = 5  # Timeout in seconds
 
 # Program data
@@ -87,18 +64,18 @@ def close_port(ip):
         logger.debug(ip_timers)
         pass
 
-async def process_packet(packet):
-    if packet.haslayer(TCP) and (packet[TCP].flags == 'S'):
-        src_ip = packet[IP].src
-        # Open the port for this IP
-        open_port(src_ip)
+def process_packet(packet):
+  if packet.haslayer(TCP) and (packet[TCP].flags == 'S'):
+    src_ip = packet[IP].src
+    # Open the port for this IP
+    open_port(src_ip)
 
-def sniff_packets():
-    sniff(filter=filter_expr, iface=iface, prn=lambda pkt: asyncio.ensure_future(process_packet(pkt)), store=0)
+async def sniff_packets():
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: sniff(filter=filter_expr, iface=iface, prn=lambda pkt: process_packet(pkt), store=0))
+
 
 if __name__ == "__main__":
-    # Start the packet sniffer in a separate task
-    asyncio.ensure_future(sniff_packets())
-
-    # Start the asyncio event loop
-    asyncio
+  loop = asyncio.get_event_loop()    
+  loop.create_task(sniff_packets())
+  loop.run_forever()
