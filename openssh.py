@@ -3,9 +3,7 @@ import sys
 from scapy.all import *
 import logging
 import psutil
-from threading import Timer
-import threading
-import signal
+import asyncio
 
 # Debug
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
@@ -35,9 +33,8 @@ def open_port(ip):
 
     # Start or reset the timer for this IP
     if ip in ip_timers:
-        ip_timers[ip].reset()
-    else:
-        ip_timers[ip] = RepeatingTimer(TIMEOUT, lambda: check_and_close_port(ip))
+        ip_timers[ip].cancel()
+    ip_timers[ip] = asyncio.get_event_loop().call_later(TIMEOUT, check_and_close_port, ip)
     
 def check_and_close_port(ip):
     # Check if there is an active connection from this IP
@@ -47,16 +44,11 @@ def check_and_close_port(ip):
             connection.status == 'ESTABLISHED',
             connection.raddr and connection.raddr[0] == ip  # check if raddr is not empty and access the IP address from the tuple
         )
-        # try:
-        #     debug_msg = f'Comparing local port {connection.laddr.port} to {port_to_open}: {comparison_results[0]}, ' \
-        #                 f'status to "ESTABLISHED": {comparison_results[1]}, ' \
-        #                 f'remote IP {connection.raddr[0]} to {ip}: {comparison_results[2]}'
-        # except IndexError:
-        #     debug_msg = f'Error retrieving remote IP for connection: {connection}'  # Error message when raddr tuple is empty
-        # logger.debug(debug_msg)
+
         if all(comparison_results):
             logger.info(f'SSH connection detected from triggering IP {ip}, resetting timer to check again later')
-            ip_timers[ip].reset()
+            ip_timers[ip].cancel()
+            ip_timers[ip] = asyncio.get_event_loop().call_later(TIMEOUT, check_and_close_port, ip)
             return
     close_port(ip)
 
@@ -71,62 +63,18 @@ def close_port(ip):
         logger.debug(ip_timers)
         pass
 
-# def process_packet(packet):
-#     if packet.haslayer(TCP) and packet.haslayer(Raw):
-#         # Check if it's an HTTP GET request with the specific URI
-#         if b'GET /openssh' in packet[Raw].load:
-#             src_ip = packet[IP].src
-#             # Open the port for this IP
-#             open_port(src_ip)
-
-def process_packet(packet):
+async def process_packet(packet):
     if packet.haslayer(TCP) and (packet[TCP].flags == 'S'):
         src_ip = packet[IP].src
         # Open the port for this IP
         open_port(src_ip)
 
-class RepeatingTimer:
-    def __init__(self, interval, function):
-        self._timer = None
-        self.interval = interval
-        self.function = function
-        self.reset()
-
-    def _run(self):
-        self.function()
-        self._timer = Timer(self.interval, self._run)
-        self._timer.start()
-
-    def reset(self):
-        if self._timer:
-            self._timer.cancel()
-        self._timer = Timer(self.interval, self._run)
-        self._timer.start()
-
-    def cancel(self):
-        if self._timer:
-            if threading.current_thread() is not threading.main_thread():
-                self._timer.daemon = True
-            self._timer.cancel()
-            self._timer.join() # Wait for the timer to finish executing
-
-def ensure_drop_rules(port):
-    # Check if the DROP rule for port {port_to_open} exists, and if not, add it
-    drop_rule = f'/sbin/iptables -C INPUT -i {iface} -d {iface_ip} -p tcp --dport {port} -j DROP'
-    if os.system(drop_rule) != 0:
-        os.system(f'/sbin/iptables -I INPUT -i {iface} -d {iface_ip} -p tcp --dport {port} -j DROP')
-        logger.info('DROP rule added for port {port_to_open}')
-
-def cleanup(signum, frame):
-    logger.info('Received termination signal, cleaning up...')
-    for ip, timer in ip_timers.items():
-        close_port(ip)
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, cleanup)
-signal.signal(signal.SIGTERM, cleanup)
+def sniff_packets():
+    sniff(filter=filter_expr, iface=iface, prn=lambda pkt: asyncio.ensure_future(process_packet(pkt)), store=0)
 
 if __name__ == "__main__":
-    ensure_drop_rules(port_to_monitor)
-    ensure_drop_rules(port_to_open)
-    sniff(filter=filter_expr, prn=process_packet, iface=iface, store=False)
+    # Start the packet sniffer in a separate task
+    asyncio.ensure_future(sniff_packets())
+
+    # Start the asyncio event loop
+    asyncio
