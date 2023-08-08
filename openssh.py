@@ -3,6 +3,7 @@ from scapy.all import *
 import logging
 import psutil
 from threading import Timer
+import signal
 
 # Debug
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
