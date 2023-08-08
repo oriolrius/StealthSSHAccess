@@ -13,3 +13,15 @@ services:
       - IFACE_IP=172.19.0.2
       - PORT_TO_MONITOR=55888
       - PORT_TO_OPEN=55222
+      - PICKLE_FILE=timers.pkl
+  closessh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ymbihq/openssh
+    privileged: true
+    network_mode: host
+    environment:
+      - LOGLEVEL=DEBUG
+      - TIMEOUT=5
+      - WAIT_LOOP=60
