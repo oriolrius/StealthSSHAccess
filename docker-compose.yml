@@ -3,8 +3,9 @@ services:
   openssh:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.openssh
     image: ymbihq/openssh
+    container_name: openssh
     privileged: true
     network_mode: host
     environment:
@@ -14,14 +15,24 @@ services:
       - PORT_TO_MONITOR=55888
       - PORT_TO_OPEN=55222
       - PICKLE_FILE=timers.pkl
+    volumes:
+      - ./data:/data
   closessh:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: ymbihq/openssh
+      dockerfile: Dockerfile.closessh
+    image: ymbihq/closessh
+    container_name: closessh
     privileged: true
     network_mode: host
     environment:
       - LOGLEVEL=DEBUG
       - TIMEOUT=5
-      - WAIT_LOOP=60
+      - WAIT_LOOP=10
+      - IFACE=eth0
+      - IFACE_IP=172.19.0.2
+      - PORT_TO_MONITOR=55888
+      - PORT_TO_OPEN=55222
+      - PICKLE_FILE=timers.pkl
+    volumes:
+      - ./data:/data
