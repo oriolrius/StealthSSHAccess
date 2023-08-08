@@ -1,4 +1,5 @@
 import os
+import sys
 from scapy.all import *
 import logging
 import psutil
@@ -45,13 +46,13 @@ def check_and_close_port(ip):
             connection.status == 'ESTABLISHED',
             connection.raddr and connection.raddr[0] == ip  # check if raddr is not empty and access the IP address from the tuple
         )
-        try:
-            debug_msg = f'Comparing local port {connection.laddr.port} to {port_to_open}: {comparison_results[0]}, ' \
-                        f'status to "ESTABLISHED": {comparison_results[1]}, ' \
-                        f'remote IP {connection.raddr[0]} to {ip}: {comparison_results[2]}'
-        except IndexError:
-            debug_msg = f'Error retrieving remote IP for connection: {connection}'  # Error message when raddr tuple is empty
-        logger.debug(debug_msg)
+        # try:
+        #     debug_msg = f'Comparing local port {connection.laddr.port} to {port_to_open}: {comparison_results[0]}, ' \
+        #                 f'status to "ESTABLISHED": {comparison_results[1]}, ' \
+        #                 f'remote IP {connection.raddr[0]} to {ip}: {comparison_results[2]}'
+        # except IndexError:
+        #     debug_msg = f'Error retrieving remote IP for connection: {connection}'  # Error message when raddr tuple is empty
+        # logger.debug(debug_msg)
         if all(comparison_results):
             logger.info(f'SSH connection detected from triggering IP {ip}, resetting timer to check again later')
             ip_timers[ip].reset()
