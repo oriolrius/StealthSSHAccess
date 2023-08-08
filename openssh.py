@@ -42,16 +42,17 @@ def check_and_close_port(ip):
         comparison_results = (
             connection.laddr.port == port_to_open,
             connection.status == 'ESTABLISHED',
-            connection.raddr.ip == ip
+            connection.raddr[0] == ip  # access the IP address from the tuple
         )
         logger.debug(f'Comparing local port {connection.laddr.port} to {port_to_open}: {comparison_results[0]}, '
                      f'status to "ESTABLISHED": {comparison_results[1]}, '
-                     f'remote IP {connection.raddr.ip} to {ip}: {comparison_results[2]}')
+                     f'remote IP {connection.raddr[0]} to {ip}: {comparison_results[2]}')
         if all(comparison_results):
             logger.info(f'SSH connection detected from triggering IP {ip}, resetting timer to check again later')
             ip_timers[ip].reset()
             return
     close_port(ip)
+
 
 def close_port(ip):
     # If no active connections are found, remove the ACCEPT entry for this IP
