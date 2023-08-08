@@ -10,7 +10,7 @@ import signal
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
-logger = logging.getLogger('traffic_monitor')
+logger = logging.getLogger('openssh')
 logger.debug(f'LOGLEVEL = {LOGLEVEL}')
 
 # Configuration
@@ -19,7 +19,7 @@ iface_ip = os.getenv("IFACE_IP") or "172.19.0.2"
 port_to_monitor = int(os.getenv('PORT_TO_MONITOR') or "55888")
 filter_expr = f"tcp port {port_to_monitor}"
 port_to_open = int(os.getenv('PORT_TO_OPEN') or port_to_open)
-TIMEOUT = 60
+TIMEOUT = 10
 
 # Program data
 ip_timers = {} # This will store timers for each triggering IP
@@ -67,6 +67,7 @@ def close_port(ip):
         ip_timers[ip].cancel()
         del ip_timers[ip]
     except KeyError:
+        logger.debug(ip_timers)
         pass
 
 # def process_packet(packet):
