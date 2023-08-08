@@ -19,7 +19,7 @@ iface_ip = os.getenv("IFACE_IP") or "172.19.0.2"
 port_to_monitor = int(os.getenv('PORT_TO_MONITOR') or "55888")
 filter_expr = f"tcp port {port_to_monitor}"
 port_to_open = int(os.getenv('PORT_TO_OPEN') or port_to_open)
-TIMEOUT = 10
+TIMEOUT = 5  # Timeout in seconds
 
 # Program data
 ip_timers = {} # This will store timers for each triggering IP
@@ -103,8 +103,10 @@ class RepeatingTimer:
         self._timer.start()
 
     def cancel(self):
-        if self._timer:
-            self._timer.cancel()
+      if self._timer:
+          self._timer.cancel()
+          self._timer.join() # Wait for the timer to finish executing
+
 
 def ensure_drop_rules(port):
     # Check if the DROP rule for port {port_to_open} exists, and if not, add it
