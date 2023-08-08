@@ -4,6 +4,7 @@ from scapy.all import *
 import logging
 import psutil
 from threading import Timer
+import threading
 import signal
 
 # Debug
@@ -103,9 +104,12 @@ class RepeatingTimer:
         self._timer.start()
 
     def cancel(self):
-      if self._timer:
-          self._timer.cancel()
-          self._timer.join() # Wait for the timer to finish executing
+        if self._timer:
+            self._timer.cancel()
+            if threading.current_thread() is not threading.main_thread():
+                self._timer.daemon = True
+                self._timer.join() # Wait for the timer to finish executing
+
 
 
 def ensure_drop_rules(port):
