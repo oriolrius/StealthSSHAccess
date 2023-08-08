@@ -21,7 +21,7 @@ logger.addHandler(logging.StreamHandler())
 
 
 # # Debug
-# LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 # # FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 # # logging.root.setLevel(logging.DEBUG)
 # # logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
