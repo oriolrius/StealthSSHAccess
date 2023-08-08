@@ -105,12 +105,10 @@ class RepeatingTimer:
 
     def cancel(self):
         if self._timer:
-            self._timer.cancel()
             if threading.current_thread() is not threading.main_thread():
                 self._timer.daemon = True
-                self._timer.join() # Wait for the timer to finish executing
-
-
+            self._timer.cancel()
+            self._timer.join() # Wait for the timer to finish executing
 
 def ensure_drop_rules(port):
     # Check if the DROP rule for port {port_to_open} exists, and if not, add it
