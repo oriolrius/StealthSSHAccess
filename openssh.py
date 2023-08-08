@@ -7,9 +7,18 @@ import asyncio
 
 # Debug
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
-logger = logging.getLogger('openssh')
+# FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# logging.root.setLevel(logging.DEBUG)
+# logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
+# logger = logging.getLogger('openssh')
+
+# Set the log level for the root logger
+logging.root.setLevel(logging.DEBUG)
+# Add a handler to the root logger to configure output
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s - %(message)s")
+# Create a logger for your module
+logger = logging.getLogger(__name__)
+
 logger.debug(f'LOGLEVEL = {LOGLEVEL}')
 
 # Configuration
