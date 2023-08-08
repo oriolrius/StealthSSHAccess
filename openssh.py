@@ -43,7 +43,7 @@ def check_and_close_port(ip):
         comparison_results = (
             connection.laddr.port == port_to_open,
             connection.status == 'ESTABLISHED',
-            connection.raddr[0] == ip  # access the IP address from the tuple
+            connection.raddr and connection.raddr[0] == ip  # check if raddr is not empty and access the IP address from the tuple
         )
         logger.debug(f'Comparing local port {connection.laddr.port} to {port_to_open}: {comparison_results[0]}, '
                      f'status to "ESTABLISHED": {comparison_results[1]}, '
@@ -53,6 +53,7 @@ def check_and_close_port(ip):
             ip_timers[ip].reset()
             return
     close_port(ip)
+
 
 
 def close_port(ip):
