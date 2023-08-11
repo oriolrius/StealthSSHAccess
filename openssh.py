@@ -11,7 +11,7 @@ LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.root.setLevel(logging.DEBUG)
 logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("openssh")
 logger.debug(f'LOGLEVEL = {LOGLEVEL}')
 
 # Configuration
