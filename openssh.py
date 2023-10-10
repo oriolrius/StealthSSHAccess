@@ -5,6 +5,7 @@ import psutil
 from scapy.all import *
 import time
 import pickle
+import subprocess
 
 # Debug
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
@@ -17,13 +18,15 @@ logger.debug(f'LOGLEVEL = {LOGLEVEL}')
 # Configuration
 iface = os.getenv('IFACE') or "eth0"
 iface_ip = os.getenv("IFACE_IP") or "172.19.0.2"
-port_to_monitor = int(os.getenv('PORT_TO_MONITOR')) or 55888
+port_to_monitor = os.getenv('PORT_TO_MONITOR') or 55888
+port_to_monitor = int(port_to_monitor)
 filter_expr = f"tcp port {port_to_monitor}"
-port_to_open = int(os.getenv('PORT_TO_OPEN')) or 55222
-PICKLE_FILE = '/data/' + os.getenv('PICKLE_FILE') or 'timers.pkl'
+port_to_open = os.getenv('PORT_TO_OPEN') or 55222
+port_to_open = int(port_to_open)
+PICKLE_FILE = '/data/' + ( os.getenv('PICKLE_FILE') or 'timers.pkl')
 
 # Program data
-ip_timers = {} # This will store timers for each triggering IP
+ip_timers = {} # This will store the timers for each triggering IP
 
 def load_timers():
     # Load pickled data from file
@@ -44,10 +47,10 @@ def update_timers():
 
 def open_port(ip):
     # Open the port for the given IP if it's not already open
-    if os.system(f'/sbin/iptables -C INPUT -i {iface} -d {iface_ip} -p tcp --dport {port_to_open} -s {ip} -j ACCEPT') == 0:
-        logger.debug(f'Port: {port} already open for source IP address: {ip}')
+    if run_cmd(f'/sbin/iptables -t mangle -C PREROUTING -i {iface} -d {iface_ip} -p tcp --dport {port_to_open} -s {ip} -j ACCEPT') == 0:
+        logger.debug(f'Port: {port_to_open} already open for source IP address: {ip}')
     else:
-        os.system(f'/sbin/iptables -I INPUT -i {iface} -d {iface_ip} -p tcp --dport {port_to_open} -s {ip} -j ACCEPT')
+        run_cmd(f'/sbin/iptables -t mangle -I PREROUTING -i {iface} -d {iface_ip} -p tcp --dport {port_to_open} -s {ip} -j ACCEPT')
         logger.info(f'Port {port_to_open} opened for IP: {ip}')
     # Set the timer for this IP
     ip_timers[ip] = time.time()
@@ -60,12 +63,22 @@ def process_packet(packet):
 
 def ensure_drop_rules(port):
     # Check if the DROP rule for port {port_to_open} exists, and if not, add it
-    drop_rule = f'/sbin/iptables -C INPUT -i {iface} -d {iface_ip} -p tcp --dport {port} -j DROP'
-    if os.system(drop_rule) != 0:
-        os.system(f'/sbin/iptables -I INPUT -i {iface} -d {iface_ip} -p tcp --dport {port} -j DROP')
+    if  run_cmd(f'/sbin/iptables -t mangle -C PREROUTING -i {iface} -d {iface_ip} -p tcp --dport {port} -j DROP') != 0:
+        run_cmd(f'/sbin/iptables -t mangle -I PREROUTING -i {iface} -d {iface_ip} -p tcp --dport {port} -j DROP')
         logger.info(f'DROP rule added for port {port}')
     else:
         logger.info(f'DROP rule already existing for port {port}')
+
+def run_cmd(cmd):
+    logger.debug(f'Running command: {cmd}')
+    #exit_code = subprocess.run(cmd.split(' '), check=True)
+    try:
+        subprocess.run(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        exit_code = 0  # Rule exists
+    except subprocess.CalledProcessError:
+        exit_code = 1  # Rule doesn't exist
+    logger.debug(f'Exit code: {exit_code}')
+    return exit_code
 
 if __name__ == "__main__":
     # Ensure default behaviour

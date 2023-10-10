@@ -70,6 +70,14 @@ To run the services, execute:
 docker-compose up -d
 ```
 
+### Developing the code
+
+To run the services, execute:
+
+```bash
+docker run --rm -it -v /docker-data/StealthSSHAccess/data:/data -v /docker-data/StealthSSHAccess:/sniffer ymbihq/openssh /bin/sh 
+```
+
 ## Data Persistence
 
 The data related to the IP timers is persisted in the `./data` directory mapped in the volumes. Make sure this directory is writable by the Docker user.

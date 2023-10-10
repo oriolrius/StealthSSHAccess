@@ -4,7 +4,7 @@ import psutil
 import time
 import pickle
 import time
-from openssh import update_timers, load_timers
+from openssh import update_timers, load_timers, run_cmd
 
 # Debug
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
@@ -21,8 +21,9 @@ iface = os.getenv('IFACE') or "eth0"
 iface_ip = os.getenv("IFACE_IP") or "172.19.0.2"
 port_to_monitor = int(os.getenv('PORT_TO_MONITOR')) or 55888
 filter_expr = f"tcp port {port_to_monitor}"
-port_to_open = int(os.getenv('PORT_TO_OPEN')) or 55222
-PICKLE_FILE = '/data/' + os.getenv('PICKLE_FILE') or 'timers.pkl'
+port_to_open = os.getenv('PORT_TO_OPEN') or 55222
+port_to_open = int(port_to_open)
+PICKLE_FILE = '/data/' + ( os.getenv('PICKLE_FILE') or 'timers.pkl')
 
 # Program data
 ip_timers = {}
@@ -49,7 +50,7 @@ def check_and_close_ports(ip):
 
 def close_port(ip):
     # If no active connections are found, remove the ACCEPT entry for this IP
-    os.system(f'/sbin/iptables -D INPUT -i {iface} -d {iface_ip} -p tcp --dport {port_to_open} -s {ip} -j ACCEPT')
+    run_cmd(f'/sbin/iptables -t mangle -D PREROUTING -i {iface} -d {iface_ip} -p tcp --dport {port_to_open} -s {ip} -j ACCEPT')
     logger.info(f'Removed ACCEPT rule for IP: {ip}')
     try:
         del ip_timers[ip]
