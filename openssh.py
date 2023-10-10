@@ -31,8 +31,12 @@ ip_timers = {} # This will store the timers for each triggering IP
 def load_timers():
     # Load pickled data from file
     if os.path.exists(PICKLE_FILE):
+      try:
         with open(PICKLE_FILE, 'rb') as file:
             ip_timers = pickle.load(file)
+      except pickle.UnpicklingError as e:
+        logger.debug(f"Error loading pickle file: {PICKLE_FILE} - {e}")
+        update_timers()
     else:
         update_timers()
     logger.info(f"Loaded pickle file: {PICKLE_FILE} - ip_timers: {ip_timers}")
