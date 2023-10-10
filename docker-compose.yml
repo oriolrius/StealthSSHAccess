@@ -5,7 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile.openssh
     image: ymbihq/openssh
-    container_name: openssh
     privileged: true
     network_mode: host
     env_file:
@@ -18,7 +17,6 @@ services:
       context: .
       dockerfile: Dockerfile.closessh
     image: ymbihq/closessh
-    container_name: closessh
     privileged: true
     network_mode: host
     env_file:
