@@ -1,5 +1,4 @@
 import os
-import sys
 import logging
 import psutil
 from scapy.all import *
@@ -24,8 +23,6 @@ port_to_monitor = [
 ]
 port_to_open = [int(port) for port in (os.getenv("PORT_TO_OPEN") or "55222").split(",")]
 filter_expr = f"tcp port {' or tcp port '.join(str(port) for port in port_to_monitor)}"
-port_to_open = os.getenv("PORT_TO_OPEN") or 55222
-port_to_open = int(port_to_open)
 PICKLE_FILE = "/data/" + (os.getenv("PICKLE_FILE") or "timers.pkl")
 
 # Program data
@@ -37,7 +34,7 @@ def load_timers():
     if os.path.exists(PICKLE_FILE):
         try:
             with open(PICKLE_FILE, "rb") as file:
-                ip_timers = pickle.load(file)
+                ip_timers.update(pickle.load(file))
         except pickle.UnpicklingError as e:
             logger.debug(f"Error loading pickle file: {PICKLE_FILE} - {e}")
             update_timers()
@@ -49,7 +46,7 @@ def load_timers():
 
 def update_timers():
     with open(PICKLE_FILE, "wb") as file:
-        pickle.dump(ip_timers, file)
+        pickle.dump(dict(ip_timers), file)
     logger.info(f"Updated pickle file: {PICKLE_FILE} - ip_timers: {ip_timers}")
 
     return ip_timers
@@ -70,7 +67,7 @@ def open_port(ip, port):
         )
         logger.info(f"Port {port} opened for IP: {ip}")
     # Set the timer for this IP
-    ip_timers[ip] = time.time()
+    ip_timers[ip] = {port: time.time()}
     update_timers()
 
 
@@ -114,8 +111,10 @@ def run_cmd(cmd):
 
 if __name__ == "__main__":
     # Ensure default behaviour
-    ensure_drop_rules(port_to_monitor)
-    ensure_drop_rules(port_to_open)
+    for port in port_to_monitor:
+        ensure_drop_rules(port_to_monitor)
+    for port in port_to_open:
+        ensure_drop_rules(port_to_open)
     # load old timers
     ip_timers = load_timers()
     # Capturing traffic
