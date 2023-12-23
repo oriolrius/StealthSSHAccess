@@ -1,13 +1,13 @@
 # StealthSSHAccess
 
-StealthSSHAccess is a smart and secure way to manage remote SSH access to your servers. It keeps the SSH port shielded from unwanted attacks such as denial-of-service (DoS), brute force, and other malicious attempts. However, the need to have remote access remains essential, and StealthSSHAccess caters to this requirement in a stealthy and personalized way.
+StealthSSHAccess is a smart and secure way to manage remote SSH access to your servers, and other ports. It keeps the SSH port shielded from unwanted attacks such as denial-of-service (DoS), brute force, and other malicious attempts. However, the need to have remote access remains essential, and StealthSSHAccess caters to this requirement in a stealthy and personalized way.
 
 ## How It Works
 
-- **Monitoring for Intent**: The service continuously monitors a specific (non-SSH) TCP port for any connection attempts.
-- **Capturing the IP**: If an attempt is made on this monitored port, the IP address of the requester is captured. The initial connection attempt will fail, but this 'knock' on the port serves as a signal of intent to access SSH.
-- **Opening a Secure Door**: StealthSSHAccess then temporarily opens the SSH port exclusively for that captured IP address, allowing for a secure connection.
-- **Time-Bound Access**: The access is allowed for a pre-configured duration, defined by the `TIMEOUT` environment variable (default value in seconds). If the SSH access is not used within this duration, the port is automatically closed for that specific IP, ensuring that the window of exposure is limited. This adds an additional layer of security by providing a narrow window of time for the authorized IP to connect to the SSH service.
+- **Monitoring for Intent**: The service continuously monitors a specific TCP port for any connection attempts.
+- **Capturing the IP**: If an attempt is made on this monitored port, the IP address of the requester is captured. The initial connection attempt will fail, but this 'knock' on the port serves as a signal of intent to access.
+- **Opening a Secure Door**: StealthSSHAccess then temporarily opens the SSH port, and/or a list of ports, exclusively for that captured IP address, allowing for a regular TCP connection.
+- **Time-Bound Access**: The access is allowed for a pre-configured duration, defined by the `TIMEOUT` environment variable (default value in seconds). If the SSH, or any other port list in `PORTS_TO_OPEN`, access is use within the `TIMEOUT` duration, the ports are automatically closed for that specific IP, ensuring that the window of exposure is limited. This adds an additional layer of security by providing a narrow window of time for the authorized IP to connect to the SSH service, services at `PORTS_TO_OPEN`.
 - **Closing Unused Port**: If the port remains unused during the allotted time, the access will be automatically revoked, and the port will be closed for that specific IP. This process is controlled by a continuous monitoring mechanism in the `closessh` service.
 - **Persisting Access Information**: All the timers associated with IP addresses are persisted in a file defined by the `PICKLE_FILE` environment variable, ensuring that the system remains aware of pending access even across restarts. This allows the application to keep track of authorized IPs and the corresponding timeouts across service interruptions or restarts.
 
@@ -25,7 +25,7 @@ StealthSSHAccess is a smart and secure way to manage remote SSH access to your s
 - **Dynamic Response**: It responds dynamically to legitimate access attempts, providing a smooth user experience.
 - **Minimal Configuration**: With a simple configuration and deployment using Docker, StealthSSHAccess can be integrated into existing systems with ease.
 
-StealthSSHAccess is more than just a port filtering solution; it's a dynamic, intelligent gateway that recognizes your intent and grants access when, where, and how you need it. Ideal for administrators looking to maintain a high level of security while still enjoying the convenience of remote access.
+StealthSSHAccess is a simple automation that helps you to add a new layer of security to your private remote access services. Ideal for administrators looking to maintain a high level of security while still enjoying the convenience of remote access.
 
 ## Services overview
 
@@ -39,7 +39,7 @@ StealthSSHAccess is more than just a port filtering solution; it's a dynamic, in
 
 ## Configuration
 
-Configuration can be done via environment variables, which can be set in the `.env` file. A sample `.env` file is provided in `env.sample`. Rename this file to `.env` and update the values as needed.
+Configuration can be done via environment variables, which can be set in the `.env` file. A sample `.env` file is provided in `.env.sample`. Rename this file to `.env` and update the values as needed.
 
 ### Environment Variables
 
@@ -47,7 +47,7 @@ Configuration can be done via environment variables, which can be set in the `.e
 - `IFACE`: Network interface to monitor.
 - `IFACE_IP`: IP address of the interface to monitor.
 - `PORT_TO_MONITOR`: Port to monitor for SYN packets.
-- `PORT_TO_OPEN`: Port to open for the source IP of detected SYN packets.
+- `PORTS_TO_OPEN`: Coma separated list of ports to open for the source IP address.
 - `PICKLE_FILE`: Path to the "pickle" file used to store timer information.
 - `TIMEOUT`: Timeout in seconds for closing the opened port (only for closessh service).
 - `WAIT_LOOP`: Time to wait between checks for active connections (only for closessh service).
@@ -75,7 +75,7 @@ docker-compose up -d
 To run the services, execute:
 
 ```bash
-docker run --rm -it -v /docker-data/StealthSSHAccess/data:/data -v /docker-data/StealthSSHAccess:/sniffer ymbihq/openssh /bin/sh 
+docker run --rm -it --env-file YOUR_PATH/.env.example -v YOUR_PATH/data:/data -v YOUR_PATH:/sniffer --privileged --network host ymbihq/openssh /bin/bash
 ```
 
 ## Data Persistence

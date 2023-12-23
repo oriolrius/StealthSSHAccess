@@ -1,9 +1,7 @@
 version: '3'
 services:
   openssh:
-    build:
-      context: .
-      dockerfile: Dockerfile.openssh
+    build: .
     image: ymbihq/openssh
     privileged: true
     network_mode: host
@@ -12,11 +10,9 @@ services:
     volumes:
       - ./data:/data
     restart: unless-stopped
+    command: python3 openssh.py
   closessh:
-    build:
-      context: .
-      dockerfile: Dockerfile.closessh
-    image: ymbihq/closessh
+    image: ymbihq/openssh
     privileged: true
     network_mode: host
     env_file:
@@ -24,3 +20,4 @@ services:
     volumes:
       - ./data:/data
     restart: unless-stopped
+    command: python3 closessh.py

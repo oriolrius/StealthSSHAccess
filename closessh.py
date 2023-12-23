@@ -23,31 +23,20 @@ Ensure that the required environment variables are set before running.
 Example:
     $ python closessh.py
 """
-
-import os
-import logging
 import time
 import psutil
-from openssh import update_timers, load_timers, run_cmd
-
-# Debug
-LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
-FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-logging.basicConfig(level=LOGLEVEL, format=FORMAT, handlers=[logging.StreamHandler()])
-logger = logging.getLogger("closessh")
-logger.debug(f"LOGLEVEL = {LOGLEVEL}")
-
-# Configuration
-TIMEOUT = int(os.getenv("TIMEOUT", 600))
-WAIT_LOOP = int(os.getenv("WAIT_LOOP", 60))
-iface = os.getenv("IFACE", "eth0")
-iface_ip = os.getenv("IFACE_IP", "172.19.0.2")
-port_to_monitor = int(os.getenv("PORT_TO_MONITOR", 55888))
-ports_to_open = [int(port) for port in os.getenv("PORTS_TO_OPEN", "55222").split(",")]
-PICKLE_FILE = "/data/" + os.getenv("PICKLE_FILE", "timers.pkl")
-
-# Program data
-ip_timers = {}
+from ssh_port_manager import (
+    load_timers,
+    iface,
+    iface_ip,
+    ip_timers,
+    update_timers,
+    run_cmd,
+    logger,
+    ports_to_open,
+    TIMEOUT,
+    WAIT_LOOP
+    )
 
 def check_and_close_ports(ip):
     """
@@ -60,7 +49,8 @@ def check_and_close_ports(ip):
     Parameters:
     ip (str): The IP address for which to check open ports.
     """
-    for port in ports_to_open:
+    for port in list(ip_timers[ip]):
+        logger.debug(f"Checking if {ip}:{port} is active.")
         # Check if there is an active connection from this IP
         for connection in psutil.net_connections(kind="inet"):
             comparison_results = (
@@ -70,17 +60,25 @@ def check_and_close_ports(ip):
             )
             if all(comparison_results):
                 logger.info(
-                  "SSH connection detected from IP {}, resetting timer "
-                  "to check again later".format(ip)
+                  f"TCP connection detected from {ip}:{port}, resetting timer "
+                  f"to check again later."
                 )
-                ip_timers[ip] = time.time()
+                for p in ports_to_open:
+                    ip_timers[ip][p] = time.time()
+                update_timers()
                 return
 
         # Check if it's unused for more than TIMEOUT
-        ttl = time.time() - ip_timers.get(ip, 0)
+        try:
+            ttl = int(time.time() - ip_timers[ip][port])
+        except KeyError:
+            logger.debug(f"KeyError: {ip}:{port} - closing port.")
+            close_port(ip, port)
+            continue
         logger.debug(f"Calculating Time-to-live (TTL) for IP {ip}. TTL: {ttl}, TIMEOUT: {TIMEOUT}.")
         if ttl > TIMEOUT:
             close_port(ip, port)
+
 
 def close_port(ip, port):
     """
@@ -101,16 +99,17 @@ def close_port(ip, port):
     run_cmd(iptables_cmd)
     logger.info(f"Removed ACCEPT rule for IP: {ip} and port: {port}")
     try:
-        del ip_timers[ip]
+        del ip_timers[ip][port]
         update_timers()
     except KeyError:
-        pass
+        logger.warning(f"KeyError: {ip}:{port} - removing IP:PORT from ip_timers.")
+
 
 if __name__ == "__main__":
     while True:
         ip_timers = load_timers()
-        logger.info(f"Current IP Timers: {ip_timers}")
-        for ip in list(ip_timers):
-            logger.debug(f"Checking and potentially closing ports for IP: {ip}")
-            check_and_close_ports(ip)
-        time.sleep(WAIT_LOOP)  # Sleep to prevent busy-waiting
+        logger.info(ip_timers)
+        for the_ip in list(ip_timers):
+            logger.debug(f"check_and_close_ports: {the_ip}")
+            check_and_close_ports(the_ip)
+        time.sleep(WAIT_LOOP)
