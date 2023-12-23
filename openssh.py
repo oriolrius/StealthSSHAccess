@@ -118,6 +118,8 @@ def open_port(ip, port):
         run_cmd(rule_add)
         logger.info(f"Port {port} opened for IP: {ip}")
     # Set the timer for this IP and port
+    if ip not in ip_timers:
+        ip_timers[ip] = {}
     ip_timers[ip][port] = time.time()
     update_timers()
 
