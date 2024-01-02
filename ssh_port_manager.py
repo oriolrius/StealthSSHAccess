@@ -98,13 +98,13 @@ def ensure_drop_rules(port):
     None
     """
     # Common parts of the command
-    iptables_base_cmd = "/sbin/iptables"
+    iptables_base_cmd = "/sbin/iptables -t mangle"
     iptables_common_args = f"-i {iface} -d {iface_ip} -p tcp --dport {port}"
 
     # Check if the DROP rule for port exists, and if not, add it
-    check_cmd = (f"{iptables_base_cmd} -C INPUT "
+    check_cmd = (f"{iptables_base_cmd} -C PREROUTING "
                  f"{iptables_common_args} -j DROP")
-    add_cmd = (f"{iptables_base_cmd} -I INPUT "
+    add_cmd = (f"{iptables_base_cmd} -I PREROUTING "
                f"{iptables_common_args} -j DROP")
 
     if run_cmd(check_cmd) != 0:

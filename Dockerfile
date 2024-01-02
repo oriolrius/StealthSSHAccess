@@ -27,4 +27,4 @@ RUN python3 -m venv venv \
 RUN apk del build-base gcc python3-dev linux-headers
 RUN rm -rf /var/cache/apk/*
 
-COPY *.py .
+COPY *.py ./
