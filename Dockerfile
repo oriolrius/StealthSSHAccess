@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM ubuntu:14.04
 
 ARG UID=0
 ARG GID=0
@@ -8,23 +8,33 @@ USER root
 WORKDIR /sniffer
 
 # Install necessary packages and Python libraries
-RUN apk update
-RUN apk add --no-cache gcc python3 python3-dev py3-pip libpcap-dev build-base linux-headers
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3 \
+    python3-dev \
+    python3-pip \
+    libpcap-dev \
+    build-essential \
+    linux-headers-$(uname -r)
 
-# if IPTABLES_PKG is iptables-legacy then link /sbin/iptables to /sbin/iptables-legacy
+# Install iptables or iptables-legacy based on the build argument
+# Note: Ubuntu 14.04 may not have a separate iptables-legacy package
 RUN if [ "${IPTABLES_PKG}" = "legacy" ]; then \
-      apk add --no-cache iptables-legacy; \
-      ln -s /sbin/iptables-legacy /sbin/iptables; \
+      apt-get install -y iptables; \
     else \
-      apk add --no-cache iptables; \
+      apt-get install -y iptables; \
     fi
 
-RUN apk add --no-cache py3-psutil
-RUN python3 -m venv venv \
-    && source venv/bin/activate \
-    && pip3 install --upgrade pip \
-    && pip3 install scapy 
-RUN apk del build-base gcc python3-dev linux-headers
-RUN rm -rf /var/cache/apk/*
+# Install psutil
+RUN pip3 install psutil
+
+# Install scapy
+RUN pip3 install scapy
+
+# Cleanup to reduce image size
+RUN apt-get remove --purge -y gcc python3-dev build-essential linux-headers-$(uname -r) \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY *.py ./
