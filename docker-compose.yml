@@ -1,14 +1,17 @@
 version: '3'
 services:
   openssh:
-    build: .
+    build: 
+      context: .
+      network: host
     image: ymbihq/openssh
     privileged: true
     network_mode: host
     env_file:
-        - .env
+      - .env
     volumes:
       - ./data:/data
+      - ./:/sniffer:ro
     restart: unless-stopped
     command: python3 openssh.py
   closessh:
@@ -19,5 +22,6 @@ services:
         - .env
     volumes:
       - ./data:/data
+      - ./:/sniffer:ro
     restart: unless-stopped
     command: python3 closessh.py

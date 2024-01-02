@@ -93,7 +93,7 @@ def close_port(ip, port):
     port (int): The port number to be closed for the given IP address.
     """
     iptables_cmd = (
-        f"/sbin/iptables -t mangle -D PREROUTING -i {iface} -d {iface_ip} "
+        f"/sbin/iptables -D INPUT -i {iface} -d {iface_ip} "
         f"-p tcp --dport {port} -s {ip} -j ACCEPT"
     )
     run_cmd(iptables_cmd)

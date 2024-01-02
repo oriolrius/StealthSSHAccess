@@ -101,13 +101,13 @@ def open_port(ip, port):
     Returns:
     None
     """
-    base_cmd = "/sbin/iptables -t mangle"
+    base_cmd = "/sbin/iptables"
     rule_check = (
-        f"{base_cmd} -C PREROUTING -i {iface} -d {iface_ip} "
+        f"{base_cmd} -C INPUT -i {iface} -d {iface_ip} "
         f"-p tcp --dport {port} -s {ip} -j ACCEPT"
     )
     rule_add = (
-        f"{base_cmd} -I PREROUTING -i {iface} -d {iface_ip} "
+        f"{base_cmd} -I INPUT -i {iface} -d {iface_ip} "
         f"-p tcp --dport {port} -s {ip} -j ACCEPT"
     )
 

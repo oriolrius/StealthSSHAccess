@@ -1,0 +1,16 @@
+FROM alpine:latest
+
+ARG UID=0
+ARG GID=0
+
+USER root
+WORKDIR /sniffer
+
+# Install necessary packages and Python libraries
+RUN apk update \
+    && apk add --no-cache python3 py3-pip libpcap-dev iptables build-base \
+    && pip3 install scapy psutil \
+    && apk del build-base \
+    && rm -rf /var/cache/apk/*
+
+COPY *.py .

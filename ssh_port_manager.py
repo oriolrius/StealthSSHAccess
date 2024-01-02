@@ -98,13 +98,13 @@ def ensure_drop_rules(port):
     None
     """
     # Common parts of the command
-    iptables_base_cmd = "/sbin/iptables -t mangle"
+    iptables_base_cmd = "/sbin/iptables"
     iptables_common_args = f"-i {iface} -d {iface_ip} -p tcp --dport {port}"
 
     # Check if the DROP rule for port exists, and if not, add it
-    check_cmd = (f"{iptables_base_cmd} -C PREROUTING "
+    check_cmd = (f"{iptables_base_cmd} -C INPUT "
                  f"{iptables_common_args} -j DROP")
-    add_cmd = (f"{iptables_base_cmd} -I PREROUTING "
+    add_cmd = (f"{iptables_base_cmd} -I INPUT "
                f"{iptables_common_args} -j DROP")
 
     if run_cmd(check_cmd) != 0:
@@ -143,7 +143,8 @@ def run_cmd(cmd):
             cmd.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
         )
         exit_code = 0  # Rule exists
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
         exit_code = 1  # Rule doesn't exist
+        logger.error(e)
     logger.debug(f"Exit code: {exit_code}")
     return exit_code
