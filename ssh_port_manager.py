@@ -19,6 +19,7 @@ ports_to_open = [int(port) for port in os.getenv("PORTS_TO_OPEN", "55222").split
 TIMEOUT = int(os.getenv("TIMEOUT", "600"))
 WAIT_LOOP = int(os.getenv("WAIT_LOOP", "60"))
 PICKLE_FILE = "/data/" + os.getenv("PICKLE_FILE", "timers.pkl")
+REMOTE_SESSION = os.getenv("REMOTE_SESSION", "")
 
 # Program data
 ip_timers = {}
@@ -98,7 +99,7 @@ def ensure_drop_rules(port):
     None
     """
     # Common parts of the command
-    iptables_base_cmd = "/sbin/iptables -t mangle"
+    iptables_base_cmd = f"{REMOTE_SESSION} /sbin/iptables -t mangle"
     iptables_common_args = f"-i {iface} -d {iface_ip} -p tcp --dport {port}"
 
     # Check if the DROP rule for port exists, and if not, add it

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build --build-arg IPTABLES_PKG=legacy -t ymbihq/openssh -f Dockerfile .
+docker build --network ymbihq_servers -t ymbihq/openssh:qnap -f Dockerfile .

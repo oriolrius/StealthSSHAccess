@@ -4,22 +4,24 @@ services:
     build: 
       context: .
       network: host
-    image: ymbihq/openssh
+    image: ymbihq/openssh:qnap
     privileged: true
     network_mode: host
     env_file:
       - .env
     volumes:
       - ./data:/data
+      - /etc/config/ssh:/root/.ssh
     restart: unless-stopped
     command: /sniffer/venv/bin/python3 openssh.py
   closessh:
-    image: ymbihq/openssh
+    image: ymbihq/openssh:qnap
     privileged: true
     network_mode: host
     env_file:
         - .env
     volumes:
       - ./data:/data
+      - /etc/config/ssh:/root/.ssh
     restart: unless-stopped
     command: /sniffer/venv/bin/python3 closessh.py

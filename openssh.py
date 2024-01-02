@@ -43,6 +43,7 @@ from ssh_port_manager import (
     logger,
     ports_to_open,
     port_to_monitor,
+    REMOTE_SESSION,
 )
 from scapy.all import sniff, TCP, IP
 
@@ -101,7 +102,7 @@ def open_port(ip, port):
     Returns:
     None
     """
-    base_cmd = "/sbin/iptables -t mangle"
+    base_cmd = f"{REMOTE_SESSION} /sbin/iptables -t mangle"
     rule_check = (
         f"{base_cmd} -C PREROUTING -i {iface} -d {iface_ip} "
         f"-p tcp --dport {port} -s {ip} -j ACCEPT"
