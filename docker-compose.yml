@@ -11,7 +11,6 @@ services:
       - .env
     volumes:
       - ./data:/data
-      - ./:/sniffer:ro
     restart: unless-stopped
     command: /sniffer/venv/bin/python3 openssh.py
   closessh:
@@ -22,6 +21,5 @@ services:
         - .env
     volumes:
       - ./data:/data
-      - ./:/sniffer:ro
     restart: unless-stopped
     command: /sniffer/venv/bin/python3 closessh.py
