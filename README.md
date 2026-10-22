@@ -1,5 +1,10 @@
 # StealthSSHAccess
 
+> **Status: retired (2026-10-22).** No longer deployed anywhere. Its knock is "any SYN to the
+> monitored port", so internet port scanners trigger it and open the protected ports for
+> themselves (on k5: 618 scanner IPs, 1854 stale rules, closer service not running), and it
+> never covered IPv6. Replaced by fwknop Single Packet Authorization (HMAC-authenticated knock).
+
 StealthSSHAccess is a smart and secure way to manage remote SSH access to your servers, and other ports. It keeps the SSH port shielded from unwanted attacks such as denial-of-service (DoS), brute force, and other malicious attempts. However, the need to have remote access remains essential, and StealthSSHAccess caters to this requirement in a stealthy and personalized way.
 
 ## How It Works
